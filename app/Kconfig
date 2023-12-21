@@ -189,6 +189,10 @@ config ZMK_BLE_FAST_SWITCHING
     bool "Fast switching between bluetooth profiles by maintaining connection"
     default y
 
+config ZMK_BLE_DIRECT_ADVERTISING
+    bool "Use direct advertising to connect to hosts when possible"
+    default n
+
 config SYSTEM_WORKQUEUE_STACK_SIZE
     default 4096 if SOC_RP2040
     default 2048

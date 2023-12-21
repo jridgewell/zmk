@@ -172,14 +172,18 @@ int update_advertising() {
         // advertise so any interested hosts can connect.
         desired_adv = ZMK_ADV_CONN;
     } else if (!zmk_ble_active_profile_is_connected()) {
+#if IS_ENABLED(CONFIG_ZMK_BLE_DIRECT_ADVERTISING) && !IS_ENABLED(CONFIG_ZMK_BLE_FAST_SWITCHING)
+        // We have an address for the active profile, but it's not yet connected.
+        // We also don't care for fast switching, so we only want advertise to this host.
+        char addr_str[BT_ADDR_LE_STR_LEN];
+        bt_addr_le_to_str(zmk_ble_active_profile_addr(), addr_str, sizeof(addr_str));
+        LOG_DBG("Directed advertising to %s", addr_str);
+        desired_adv = ZMK_ADV_DIR;
+#else
+        // We have an address for the active profile, but it's not yet connected.
+        // We do want fast switching, so we advertise to all interested hosts.
         desired_adv = ZMK_ADV_CONN;
-        // Need to fix directed advertising for privacy centrals. See
-        // https://github.com/zephyrproject-rtos/zephyr/pull/14984 char
-        // addr_str[BT_ADDR_LE_STR_LEN]; bt_addr_le_to_str(zmk_ble_active_profile_addr(), addr_str,
-        // sizeof(addr_str));
-
-        // LOG_DBG("Directed advertising to %s", addr_str);
-        // desired_adv = ZMK_ADV_DIR;
+#endif
     }
     LOG_DBG("advertising from %d to %d", advertising_status, desired_adv);
 
