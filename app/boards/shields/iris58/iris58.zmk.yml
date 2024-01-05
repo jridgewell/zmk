@@ -1,0 +1,14 @@
+file_format: "1"
+id: iris58
+name: Iris58
+type: shield
+url: https://github.com/jridgewell/iris58
+requires: [pro_micro]
+exposes: [i2c_oled]
+features:
+  - keys
+  - display
+  - encoder
+siblings:
+  - iris58_left
+  - iris58_right

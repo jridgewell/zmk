@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2023 The ZMK Contributors
+ * Copyright (c) 2020 Pete Johanson
+ *
  * SPDX-License-Identifier: MIT
  */
 
-#include "leeloo_rev2.dtsi"
+#include "iris58.dtsi"
 
 &default_transform {
     col-offset = <6>;
