@@ -81,7 +81,9 @@ static void zmk_battery_work(struct k_work *work) {
 K_WORK_DEFINE(battery_work, zmk_battery_work);
 
 static void zmk_battery_timer(struct k_timer *timer) {
-    k_work_submit_to_queue(zmk_workqueue_lowprio_work_q(), &battery_work);
+    if (zmk_activity_get_state() == ZMK_ACTIVITY_ACTIVE) {
+        k_work_submit_to_queue(zmk_workqueue_lowprio_work_q(), &battery_work);
+    }
 }
 
 K_TIMER_DEFINE(battery_timer, zmk_battery_timer, NULL);
