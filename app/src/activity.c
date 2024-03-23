@@ -28,6 +28,9 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #if IS_ENABLED(CONFIG_ZMK_AWAKE_WHILE_BLE_CONNECTED)
 #include <zmk/ble.h>
+#if IS_ENABLED(CONFIG_ZMK_SPLIT) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+#include <zmk/split/bluetooth/peripheral.h>
+#endif
 #endif
 
 // Reimplement some of the device work from Zephyr PM to work with the new `sys_poweroff` API.
