@@ -42,6 +42,7 @@ struct thb_data {
     struct adc_sequence as;
     int16_t xy_raw[2];
 #ifdef CONFIG_JOYSTICK_THB_TRIGGER
+    const struct device *dev;
     sensor_trigger_handler_t trigger_handler;
     struct sensor_trigger trigger;
     int32_t trigger_fs;
@@ -179,12 +180,11 @@ static void thb_timer_cb(struct k_timer *item) {
 
 static void thb_work_fun(struct k_work *item) {
     struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, work);
-    struct device *dev = CONTAINER_OF(&drv_data, struct device, data);
 
-    thb_sample_fetch(dev, SENSOR_CHAN_ALL);
+    thb_sample_fetch(drv_data->dev, SENSOR_CHAN_ALL);
 
     if (drv_data->trigger_handler) {
-        drv_data->trigger_handler(dev, &drv_data->trigger);
+        drv_data->trigger_handler(drv_data->dev, &drv_data->trigger);
     }
 }
 #endif // CONFIG_JOYSTICK_THB_TRIGGER
@@ -205,6 +205,7 @@ static int thb_init(const struct device *dev) {
         .input_positive = ADC_INPUT_POS_OFFSET + drv_cfg->channel_x,
     };
 
+    drv_data->dev = dev;
     int rc = adc_channel_setup(drv_data->adc, &channel_cfg);
     if (rc < 0) {
         LOG_DBG("AIN%u setup returned %d", drv_cfg->channel_x, rc);
@@ -264,7 +265,7 @@ static const struct sensor_driver_api thb_driver_api = {
         .max_mv = DT_INST_PROP(n, max_mv),                                                         \
         .min_mv = COND_CODE_0(DT_INST_NODE_HAS_PROP(n, min_mv), (0), (DT_INST_PROP(n, min_mv))),   \
     };                                                                                             \
-    DEVICE_DT_INST_DEFINE(n, thb_init, device_pm_control_nop, &thb_data_##n, &thb_config_##n,      \
-                          POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &thb_driver_api);
+    DEVICE_DT_INST_DEFINE(n, thb_init, NULL, &thb_data_##n, &thb_config_##n, POST_KERNEL,          \
+                          CONFIG_SENSOR_INIT_PRIORITY, &thb_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(THB_INST)
