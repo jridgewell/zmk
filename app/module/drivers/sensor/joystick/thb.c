@@ -62,7 +62,7 @@ static int thb_sample_fetch(const struct device *dev, enum sensor_channel chan) 
     struct adc_sequence *as = &drv_data->as;
 
     if (chan != SENSOR_CHAN_POS_DX && chan != SENSOR_CHAN_POS_DY && chan != SENSOR_CHAN_ALL) {
-        LOG_ERR("Selected channel is not supported: %d.", chan);
+        LOG_ERR("THB: Selected channel is not supported: %d.", chan);
         return -ENOTSUP;
     }
 
@@ -92,17 +92,21 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
     // convert from millivolt to normalized output in [-1.0, 1.0]
     case SENSOR_CHAN_POS_DX:
         out = 2.0 * x_mv / (drv_cfg->max_mv - drv_cfg->min_mv) - 1.0;
+        LOG_DBG("THB: Joystick x chan = %f", out);
         sensor_value_from_double(val, out);
         break;
     case SENSOR_CHAN_POS_DY:
         out = 2.0 * y_mv / (drv_cfg->max_mv - drv_cfg->min_mv) - 1.0;
+        LOG_DBG("THB: Joystick y chan = %f", out);
         sensor_value_from_double(val, out);
         break;
     case SENSOR_CHAN_ALL:
         out = 2.0 * x_mv / (drv_cfg->max_mv - drv_cfg->min_mv) - 1.0;
         sensor_value_from_double(val, out);
+        LOG_DBG("THB: Joystick x chan = %f", out);
         out = 2.0 * y_mv / (drv_cfg->max_mv - drv_cfg->min_mv) - 1.0;
         sensor_value_from_double(val + 1, out);
+        LOG_DBG("THB: Joystick y chan = %f", out);
         break;
     default:
         return -ENOTSUP;
@@ -133,20 +137,23 @@ static int thb_attr_set(const struct device *dev, enum sensor_channel chan,
     struct thb_data *drv_data = dev->data;
     uint32_t usec = 0;
 
+    LOG_DBG("THB: Setting attr %d on chan %d", attr, chan);
     if (chan != SENSOR_CHAN_ALL || attr != SENSOR_ATTR_SAMPLING_FREQUENCY) {
         return -ENOTSUP;
     }
 
     if (val->val1 > 100000) {
-        LOG_DBG("Sample rate should not exceed 100KHz");
+        LOG_DBG("THB: Sample rate should not exceed 100KHz");
         return -EINVAL;
     }
 
     drv_data->trigger_fs = val->val1;
     if (drv_data->trigger_fs != 0) {
         usec = 1000000UL / drv_data->trigger_fs;
+        LOG_DBG("THB: Setting frequency to %dusec", usec);
         k_timer_start(&drv_data->timer, K_USEC(usec), K_USEC(usec));
     } else {
+        LOG_DBG("THB: clearing timer");
         // explicitly setting duration and period to K_NO_WAIT prevents the
         // timer from going off again
         k_timer_start(&drv_data->timer, K_NO_WAIT, K_NO_WAIT);
@@ -159,6 +166,7 @@ static int thb_attr_get(const struct device *dev, enum sensor_channel chan,
                         enum sensor_attribute attr, struct sensor_value *val) {
     struct thb_data *drv_data = dev->data;
 
+    LOG_DBG("THB: Getting attr %d on chan %d", attr, chan);
     if (chan != SENSOR_CHAN_ALL || attr != SENSOR_ATTR_SAMPLING_FREQUENCY) {
         return -ENOTSUP;
     }
@@ -170,6 +178,7 @@ static int thb_attr_get(const struct device *dev, enum sensor_channel chan,
 }
 
 static void thb_timer_cb(struct k_timer *item) {
+    LOG_DBG("THB: Timer run");
     struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, timer);
 #if defined(CONFIG_JOYSTICK_THB_TRIGGER_DEDICATED_QUEUE)
     k_work_submit_to_queue(&thb_work_q, &drv_data->work);
@@ -179,6 +188,7 @@ static void thb_timer_cb(struct k_timer *item) {
 }
 
 static void thb_work_fun(struct k_work *item) {
+    LOG_DBG("THB: Working");
     struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, work);
 
     thb_sample_fetch(drv_data->dev, SENSOR_CHAN_ALL);
@@ -193,6 +203,7 @@ static int thb_init(const struct device *dev) {
     struct thb_data *drv_data = dev->data;
     const struct thb_config *drv_cfg = dev->config;
 
+    LOG_DBG("THB: Init");
     if (drv_data->adc == NULL) {
         return -ENODEV;
     }
@@ -243,6 +254,7 @@ static int thb_init(const struct device *dev) {
 #endif
 #endif
 
+    LOG_DBG("THB: Init done");
     return rc;
 }
 
