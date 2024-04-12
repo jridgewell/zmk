@@ -72,7 +72,7 @@ void peripheral_event_work_callback(struct k_work *work) {
     struct zmk_position_state_changed ev;
     while (k_msgq_get(&peripheral_event_msgq, &ev, K_NO_WAIT) == 0) {
         LOG_DBG("Trigger key position state change for %d", ev.position);
-        ZMK_EVENT_RAISE(new_zmk_position_state_changed(ev));
+        raise_zmk_position_state_changed(ev);
     }
 }
 
@@ -188,7 +188,7 @@ void peripheral_sensor_event_work_callback(struct k_work *work) {
     struct zmk_sensor_event ev;
     while (k_msgq_get(&peripheral_sensor_event_msgq, &ev, K_NO_WAIT) == 0) {
         LOG_DBG("Trigger sensor change for %d", ev.sensor_index);
-        ZMK_EVENT_RAISE(new_zmk_sensor_event(ev));
+        raise_zmk_sensor_event(ev);
     }
 }
 
@@ -295,7 +295,7 @@ void peripheral_batt_lvl_change_callback(struct k_work *work) {
     while (k_msgq_get(&peripheral_batt_lvl_msgq, &ev, K_NO_WAIT) == 0) {
         LOG_DBG("Triggering peripheral battery level change %u", ev.state_of_charge);
         peripheral_battery_levels[ev.source] = ev.state_of_charge;
-        ZMK_EVENT_RAISE(new_zmk_peripheral_battery_state_changed(ev));
+        raise_zmk_peripheral_battery_state_changed(ev);
     }
 }
 
@@ -522,14 +522,6 @@ static void split_central_process_connection(struct bt_conn *conn) {
 
     LOG_DBG("Current security for connection: %d", bt_conn_get_security(conn));
 
-#if !IS_ENABLED(CONFIG_BT_GATT_AUTO_SEC_REQ)
-    err = bt_conn_set_security(conn, BT_SECURITY_L2);
-    if (err) {
-        LOG_ERR("Failed to set security (reason %d)", err);
-        return;
-    }
-#endif // !IS_ENABLED(CONFIG_BT_GATT_AUTO_SEC_REQ)
-
     struct peripheral_slot *slot = peripheral_slot_for_conn(conn);
     if (slot == NULL) {
         LOG_ERR("No peripheral state found for connection");
@@ -561,7 +553,7 @@ static void split_central_process_connection(struct bt_conn *conn) {
     start_scanning();
 }
 
-static int stop_scanning() {
+static int stop_scanning(void) {
     LOG_DBG("Stopping peripheral scanning");
     is_scanning = false;
 
@@ -873,7 +865,7 @@ int zmk_split_bt_update_hid_indicator(zmk_hid_indicators_t indicators) {
 
 #endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
 
-int zmk_split_bt_central_init(const struct device *_arg) {
+static int zmk_split_bt_central_init(void) {
     k_work_queue_start(&split_central_split_run_q, split_central_split_run_q_stack,
                        K_THREAD_STACK_SIZEOF(split_central_split_run_q_stack),
                        CONFIG_ZMK_BLE_THREAD_PRIORITY, NULL);
