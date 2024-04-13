@@ -16,7 +16,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
-#include  "../../../../include/drivers/ext_power.h"
+#include "../../../../include/drivers/ext_power.h"
 
 #include "joystick.h"
 
@@ -226,7 +226,7 @@ int joy_init(const struct device *dev) {
         COND_CODE_0(DT_INST_NODE_HAS_PROP(n, frequency), (1), (DT_INST_PROP(n, frequency))),       \
         COND_CODE_0(DT_INST_NODE_HAS_PROP(n, reverse), (1), (DT_INST_PROP(n, reverse))),           \
     };                                                                                             \
-    DEVICE_DT_INST_DEFINE(n, joy_init, device_pm_control_nop, &joy_data_##n, &joy_cfg_##n,         \
-                          POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &joy_driver_api);
+    DEVICE_DT_INST_DEFINE(n, joy_init, NULL, &joy_data_##n, &joy_cfg_##n, POST_KERNEL,             \
+                          CONFIG_SENSOR_INIT_PRIORITY, &joy_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(JOY_INST)
