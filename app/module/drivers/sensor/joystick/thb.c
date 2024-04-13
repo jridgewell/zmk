@@ -246,6 +246,25 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
 }
 
 #ifdef CONFIG_JOYSTICK_THB_TRIGGER
+static void thb_timer_cb(struct k_timer *item) {
+    struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, timer);
+#if defined(CONFIG_JOYSTICK_THB_TRIGGER_DEDICATED_QUEUE)
+    k_work_submit_to_queue(&thb_work_q, &drv_data->work);
+#elif defined(CONFIG_JOYSTICK_THB_TRIGGER_SYSTEM_QUEUE)
+    k_work_submit(&drv_data->work);
+#endif
+}
+
+static void thb_work_fun(struct k_work *item) {
+    struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, work);
+
+    thb_sample_fetch(drv_data->dev, SENSOR_CHAN_ALL);
+
+    if (drv_data->trigger_handler) {
+        drv_data->trigger_handler(drv_data->dev, drv_data->trigger);
+    }
+}
+
 static int thb_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
                            sensor_trigger_handler_t handler) {
     struct thb_data *drv_data = dev->data;
@@ -310,25 +329,6 @@ static int thb_attr_get(const struct device *dev, enum sensor_channel chan,
     val->val2 = 0;
 
     return 0;
-}
-
-static void thb_timer_cb(struct k_timer *item) {
-    struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, timer);
-#if defined(CONFIG_JOYSTICK_THB_TRIGGER_DEDICATED_QUEUE)
-    k_work_submit_to_queue(&thb_work_q, &drv_data->work);
-#elif defined(CONFIG_JOYSTICK_THB_TRIGGER_SYSTEM_QUEUE)
-    k_work_submit(&drv_data->work);
-#endif
-}
-
-static void thb_work_fun(struct k_work *item) {
-    struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, work);
-
-    thb_sample_fetch(drv_data->dev, SENSOR_CHAN_ALL);
-
-    if (drv_data->trigger_handler) {
-        drv_data->trigger_handler(drv_data->dev, drv_data->trigger);
-    }
 }
 #endif // CONFIG_JOYSTICK_THB_TRIGGER
 
