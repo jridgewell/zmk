@@ -16,7 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(thb, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(THB, CONFIG_SENSOR_LOG_LEVEL);
 
 #define X_AXIS_TO_ADC_CHAN_ID (0)
 #define Y_AXIS_TO_ADC_CHAN_ID (1)
@@ -70,6 +70,8 @@ static int thb_sample_fetch(const struct device *dev, enum sensor_channel chan) 
     int rc = 0;
 
     rc = adc_read(drv_data->adc, as);
+    LOG_DBG("chan %d: read { x: %d, y: %d }", chan, drv_data->xy_raw[X_AXIS_TO_ADC_CHAN_ID],
+            drv_data->xy_raw[Y_AXIS_TO_ADC_CHAN_ID]);
     // First read is setup as calibration
     as->calibrate = false;
 
