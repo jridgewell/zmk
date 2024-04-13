@@ -54,7 +54,7 @@ K_THREAD_STACK_DEFINE(thb_trigger_stack_area, CONFIG_THB_WORKQUEUE_STACK_SIZE);
 static struct k_work_q thb_work_q;
 static bool is_thb_work_q_ready = false;
 #endif // CONFIG_JOYSTICK_THB_TRIGGER
-       //
+
 static char *sensor_channel_name(enum sensor_channel chan) {
     switch (chan) {
     case SENSOR_CHAN_ACCEL_X:
@@ -260,6 +260,12 @@ static int thb_trigger_set(const struct device *dev, const struct sensor_trigger
     drv_data->trigger = trig;
     drv_data->trigger_handler = handler;
 
+    const struct thb_config *drv_cfg = dev->config;
+    uint32_t usec = 1000 / drv_cfg->freq;
+    k_work_init(&drv_data->work, thb_work_fun);
+    k_timer_init(&drv_data->timer, thb_timer_cb, NULL);
+    k_timer_start(&drv_data->timer, K_MSEC(usec), K_MSEC(usec));
+
     return 0;
 }
 
@@ -377,10 +383,6 @@ static int thb_init(const struct device *dev) {
         is_thb_work_q_ready = true;
     }
 #endif
-    k_work_init(&drv_data->work, thb_work_fun);
-    uint32_t usec = 1000 / drv_cfg->freq;
-    k_timer_init(&drv_data->timer, thb_timer_cb, NULL);
-    k_timer_start(&drv_data->timer, K_MSEC(usec), K_MSEC(usec));
 #endif
 
     LOG_DBG("Init done");
