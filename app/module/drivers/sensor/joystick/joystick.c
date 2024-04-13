@@ -22,7 +22,7 @@
 
 static void zmk_joy_work(struct k_work *work);
 
-LOG_MODULE_REGISTER(JOYSTICK, CONFIG_ZMK_LOG_LEVEL);
+LOG_MODULE_REGISTER(JOYSTICK, CONFIG_SENSOR_LOG_LEVEL);
 
 static const struct device *ext_power;
 
