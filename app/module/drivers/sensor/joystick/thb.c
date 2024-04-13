@@ -55,66 +55,133 @@ static struct k_work_q thb_work_q;
 static bool is_thb_work_q_ready = false;
 #endif // CONFIG_JOYSTICK_THB_TRIGGER
        //
-static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
-	[SENSOR_CHAN_ACCEL_X] = "accel_x",
-	[SENSOR_CHAN_ACCEL_Y] = "accel_y",
-	[SENSOR_CHAN_ACCEL_Z] = "accel_z",
-	[SENSOR_CHAN_ACCEL_XYZ] = "accel_xyz",
-	[SENSOR_CHAN_GYRO_X] = "gyro_x",
-	[SENSOR_CHAN_GYRO_Y] = "gyro_y",
-	[SENSOR_CHAN_GYRO_Z] = "gyro_z",
-	[SENSOR_CHAN_GYRO_XYZ] = "gyro_xyz",
-	[SENSOR_CHAN_MAGN_X] = "magn_x",
-	[SENSOR_CHAN_MAGN_Y] = "magn_y",
-	[SENSOR_CHAN_MAGN_Z] = "magn_z",
-	[SENSOR_CHAN_MAGN_XYZ] = "magn_xyz",
-	[SENSOR_CHAN_DIE_TEMP] = "die_temp",
-	[SENSOR_CHAN_AMBIENT_TEMP] = "ambient_temp",
-	[SENSOR_CHAN_PRESS] = "press",
-	[SENSOR_CHAN_PROX] = "prox",
-	[SENSOR_CHAN_HUMIDITY] = "humidity",
-	[SENSOR_CHAN_LIGHT] = "light",
-	[SENSOR_CHAN_IR] = "ir",
-	[SENSOR_CHAN_RED] = "red",
-	[SENSOR_CHAN_GREEN] = "green",
-	[SENSOR_CHAN_BLUE] = "blue",
-	[SENSOR_CHAN_ALTITUDE] = "altitude",
-	[SENSOR_CHAN_PM_1_0] = "pm_1_0",
-	[SENSOR_CHAN_PM_2_5] = "pm_2_5",
-	[SENSOR_CHAN_PM_10] = "pm_10",
-	[SENSOR_CHAN_DISTANCE] = "distance",
-	[SENSOR_CHAN_CO2] = "co2",
-	[SENSOR_CHAN_O2] = "o2",
-	[SENSOR_CHAN_VOC] = "voc",
-	[SENSOR_CHAN_GAS_RES] = "gas_resistance",
-	[SENSOR_CHAN_VOLTAGE] = "voltage",
-	[SENSOR_CHAN_CURRENT] = "current",
-	[SENSOR_CHAN_POWER] = "power",
-	[SENSOR_CHAN_RESISTANCE] = "resistance",
-	[SENSOR_CHAN_ROTATION] = "rotation",
-	[SENSOR_CHAN_POS_DX] = "pos_dx",
-	[SENSOR_CHAN_POS_DY] = "pos_dy",
-	[SENSOR_CHAN_POS_DZ] = "pos_dz",
-	[SENSOR_CHAN_RPM] = "rpm",
-	[SENSOR_CHAN_GAUGE_VOLTAGE] = "gauge_voltage",
-	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
-	[SENSOR_CHAN_GAUGE_STDBY_CURRENT] = "gauge_stdby_current",
-	[SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT] = "gauge_max_load_current",
-	[SENSOR_CHAN_GAUGE_TEMP] = "gauge_temp",
-	[SENSOR_CHAN_GAUGE_STATE_OF_CHARGE] = "gauge_state_of_charge",
-	[SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY] = "gauge_full_cap",
-	[SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY] = "gauge_remaining_cap",
-	[SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY] = "gauge_nominal_cap",
-	[SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY] = "gauge_full_avail_cap",
-	[SENSOR_CHAN_GAUGE_AVG_POWER] = "gauge_avg_power",
-	[SENSOR_CHAN_GAUGE_STATE_OF_HEALTH] = "gauge_state_of_health",
-	[SENSOR_CHAN_GAUGE_TIME_TO_EMPTY] = "gauge_time_to_empty",
-	[SENSOR_CHAN_GAUGE_TIME_TO_FULL] = "gauge_time_to_full",
-	[SENSOR_CHAN_GAUGE_CYCLE_COUNT] = "gauge_cycle_count",
-	[SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE] = "gauge_design_voltage",
-	[SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE] = "gauge_desired_voltage",
-	[SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT] = "gauge_desired_charging_current",
-	[SENSOR_CHAN_ALL] = "all",
+static char *sensor_channel_name(enum sensor_channel chan) {
+    switch (chan) {
+    case SENSOR_CHAN_ACCEL_X:
+        return "SENSOR_CHAN_ACCEL_X";
+    case SENSOR_CHAN_ACCEL_Y:
+        return "SENSOR_CHAN_ACCEL_Y";
+    case SENSOR_CHAN_ACCEL_Z:
+        return "SENSOR_CHAN_ACCEL_Z";
+    case SENSOR_CHAN_ACCEL_XYZ:
+        return "SENSOR_CHAN_ACCEL_XYZ";
+    case SENSOR_CHAN_GYRO_X:
+        return "SENSOR_CHAN_GYRO_X";
+    case SENSOR_CHAN_GYRO_Y:
+        return "SENSOR_CHAN_GYRO_Y";
+    case SENSOR_CHAN_GYRO_Z:
+        return "SENSOR_CHAN_GYRO_Z";
+    case SENSOR_CHAN_GYRO_XYZ:
+        return "SENSOR_CHAN_GYRO_XYZ";
+    case SENSOR_CHAN_MAGN_X:
+        return "SENSOR_CHAN_MAGN_X";
+    case SENSOR_CHAN_MAGN_Y:
+        return "SENSOR_CHAN_MAGN_Y";
+    case SENSOR_CHAN_MAGN_Z:
+        return "SENSOR_CHAN_MAGN_Z";
+    case SENSOR_CHAN_MAGN_XYZ:
+        return "SENSOR_CHAN_MAGN_XYZ";
+    case SENSOR_CHAN_DIE_TEMP:
+        return "SENSOR_CHAN_DIE_TEMP";
+    case SENSOR_CHAN_AMBIENT_TEMP:
+        return "SENSOR_CHAN_AMBIENT_TEMP";
+    case SENSOR_CHAN_PRESS:
+        return "SENSOR_CHAN_PRESS";
+    case SENSOR_CHAN_PROX:
+        return "SENSOR_CHAN_PROX";
+    case SENSOR_CHAN_HUMIDITY:
+        return "SENSOR_CHAN_HUMIDITY";
+    case SENSOR_CHAN_LIGHT:
+        return "SENSOR_CHAN_LIGHT";
+    case SENSOR_CHAN_IR:
+        return "SENSOR_CHAN_IR";
+    case SENSOR_CHAN_RED:
+        return "SENSOR_CHAN_RED";
+    case SENSOR_CHAN_GREEN:
+        return "SENSOR_CHAN_GREEN";
+    case SENSOR_CHAN_BLUE:
+        return "SENSOR_CHAN_BLUE";
+    case SENSOR_CHAN_ALTITUDE:
+        return "SENSOR_CHAN_ALTITUDE";
+    case SENSOR_CHAN_PM_1_0:
+        return "SENSOR_CHAN_PM_1_0";
+    case SENSOR_CHAN_PM_2_5:
+        return "SENSOR_CHAN_PM_2_5";
+    case SENSOR_CHAN_PM_10:
+        return "SENSOR_CHAN_PM_10";
+    case SENSOR_CHAN_DISTANCE:
+        return "SENSOR_CHAN_DISTANCE";
+    case SENSOR_CHAN_CO2:
+        return "SENSOR_CHAN_CO2";
+    case SENSOR_CHAN_VOC:
+        return "SENSOR_CHAN_VOC";
+    case SENSOR_CHAN_GAS_RES:
+        return "SENSOR_CHAN_GAS_RES";
+    case SENSOR_CHAN_VOLTAGE:
+        return "SENSOR_CHAN_VOLTAGE";
+    case SENSOR_CHAN_VSHUNT:
+        return "SENSOR_CHAN_VSHUNT";
+    case SENSOR_CHAN_CURRENT:
+        return "SENSOR_CHAN_CURRENT";
+    case SENSOR_CHAN_POWER:
+        return "SENSOR_CHAN_POWER";
+    case SENSOR_CHAN_RESISTANCE:
+        return "SENSOR_CHAN_RESISTANCE";
+    case SENSOR_CHAN_ROTATION:
+        return "SENSOR_CHAN_ROTATION";
+    case SENSOR_CHAN_POS_DX:
+        return "SENSOR_CHAN_POS_DX";
+    case SENSOR_CHAN_POS_DY:
+        return "SENSOR_CHAN_POS_DY";
+    case SENSOR_CHAN_POS_DZ:
+        return "SENSOR_CHAN_POS_DZ";
+    case SENSOR_CHAN_RPM:
+        return "SENSOR_CHAN_RPM";
+    case SENSOR_CHAN_GAUGE_VOLTAGE:
+        return "SENSOR_CHAN_GAUGE_VOLTAGE";
+    case SENSOR_CHAN_GAUGE_AVG_CURRENT:
+        return "SENSOR_CHAN_GAUGE_AVG_CURRENT";
+    case SENSOR_CHAN_GAUGE_STDBY_CURRENT:
+        return "SENSOR_CHAN_GAUGE_STDBY_CURRENT";
+    case SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT:
+        return "SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT";
+    case SENSOR_CHAN_GAUGE_TEMP:
+        return "SENSOR_CHAN_GAUGE_TEMP";
+    case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
+        return "SENSOR_CHAN_GAUGE_STATE_OF_CHARGE";
+    case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
+        return "SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY";
+    case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
+        return "SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY";
+    case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
+        return "SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY";
+    case SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY:
+        return "SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY";
+    case SENSOR_CHAN_GAUGE_AVG_POWER:
+        return "SENSOR_CHAN_GAUGE_AVG_POWER";
+    case SENSOR_CHAN_GAUGE_STATE_OF_HEALTH:
+        return "SENSOR_CHAN_GAUGE_STATE_OF_HEALTH";
+    case SENSOR_CHAN_GAUGE_TIME_TO_EMPTY:
+        return "SENSOR_CHAN_GAUGE_TIME_TO_EMPTY";
+    case SENSOR_CHAN_GAUGE_TIME_TO_FULL:
+        return "SENSOR_CHAN_GAUGE_TIME_TO_FULL";
+    case SENSOR_CHAN_GAUGE_CYCLE_COUNT:
+        return "SENSOR_CHAN_GAUGE_CYCLE_COUNT";
+    case SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE:
+        return "SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE";
+    case SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE:
+        return "SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE";
+    case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
+        return "SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT";
+    case SENSOR_CHAN_ALL:
+        return "SENSOR_CHAN_ALL";
+    case SENSOR_CHAN_COMMON_COUNT:
+        return "SENSOR_CHAN_COMMON_COUNT/SENSOR_CHAN_PRIV_START";
+    case SENSOR_CHAN_MAX:
+        return "SENSOR_CHAN_MAX";
+    default:
+        return "unknown";
+    }
 };
 
 static int thb_sample_fetch(const struct device *dev, enum sensor_channel chan) {
@@ -122,14 +189,14 @@ static int thb_sample_fetch(const struct device *dev, enum sensor_channel chan) 
     struct adc_sequence *as = &drv_data->as;
 
     if (chan != SENSOR_CHAN_POS_DX && chan != SENSOR_CHAN_POS_DY && chan != SENSOR_CHAN_ALL) {
-        LOG_ERR("Selected channel is not supported: %d.", sensor_channel_name[chan]);
+        LOG_ERR("Selected channel is not supported: %s.", sensor_channel_name(chan));
         return -ENOTSUP;
     }
 
     int rc = 0;
 
     rc = adc_read(drv_data->adc, as);
-    LOG_DBG("chan %d: read { x: %d, y: %d }", sensor_channel_name[chan], drv_data->xy_raw[0],
+    LOG_DBG("chan %s: read { x: %d, y: %d }", sensor_channel_name(chan), drv_data->xy_raw[0],
             drv_data->xy_raw[1]);
     // First read is setup as calibration
     as->calibrate = false;
@@ -171,7 +238,7 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
         LOG_DBG("Joystick y chan = %f", out);
         break;
     default:
-        LOG_DBG("unknown chan %i", sensor_channel_name[chan]);
+        LOG_DBG("unknown chan %s", sensor_channel_name(chan));
         return -ENOTSUP;
     }
 
@@ -185,7 +252,7 @@ static int thb_trigger_set(const struct device *dev, const struct sensor_trigger
     enum sensor_channel chan = trig->chan;
     enum sensor_trigger_type type = trig->type;
 
-    LOG_DBG("Setting trigger %d on chan %d", type, sensor_channel_name[chan]);
+    LOG_DBG("Setting trigger %d on chan %s", type, sensor_channel_name(chan));
     if (chan != SENSOR_CHAN_ALL || type != SENSOR_TRIG_DATA_READY) {
         return -ENOTSUP;
     }
@@ -201,7 +268,7 @@ static int thb_attr_set(const struct device *dev, enum sensor_channel chan,
     struct thb_data *drv_data = dev->data;
     uint32_t usec = 0;
 
-    LOG_DBG("Setting attr %d on chan %d", attr, sensor_channel_name[chan]);
+    LOG_DBG("Setting attr %d on chan %s", attr, sensor_channel_name(chan));
     if (chan != SENSOR_CHAN_ALL || attr != SENSOR_ATTR_SAMPLING_FREQUENCY) {
         return -ENOTSUP;
     }
@@ -228,7 +295,7 @@ static int thb_attr_get(const struct device *dev, enum sensor_channel chan,
                         enum sensor_attribute attr, struct sensor_value *val) {
     struct thb_data *drv_data = dev->data;
 
-    LOG_DBG("Getting attr %d on chan %d", attr, sensor_channel_name[chan]);
+    LOG_DBG("Getting attr %d on chan %s", attr, sensor_channel_name(chan));
     if (chan != SENSOR_CHAN_ALL || attr != SENSOR_ATTR_SAMPLING_FREQUENCY) {
         return -ENOTSUP;
     }
