@@ -18,9 +18,6 @@
 
 LOG_MODULE_REGISTER(THB, CONFIG_SENSOR_LOG_LEVEL);
 
-#define X_AXIS_TO_ADC_CHAN_ID (0)
-#define Y_AXIS_TO_ADC_CHAN_ID (1)
-
 #ifdef CONFIG_ADC_NRFX_SAADC
 #define ADC_INPUT_POS_OFFSET SAADC_CH_PSELP_PSELP_AnalogInput0
 #else
@@ -57,21 +54,83 @@ K_THREAD_STACK_DEFINE(thb_trigger_stack_area, CONFIG_THB_WORKQUEUE_STACK_SIZE);
 static struct k_work_q thb_work_q;
 static bool is_thb_work_q_ready = false;
 #endif // CONFIG_JOYSTICK_THB_TRIGGER
+       //
+static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
+	[SENSOR_CHAN_ACCEL_X] = "accel_x",
+	[SENSOR_CHAN_ACCEL_Y] = "accel_y",
+	[SENSOR_CHAN_ACCEL_Z] = "accel_z",
+	[SENSOR_CHAN_ACCEL_XYZ] = "accel_xyz",
+	[SENSOR_CHAN_GYRO_X] = "gyro_x",
+	[SENSOR_CHAN_GYRO_Y] = "gyro_y",
+	[SENSOR_CHAN_GYRO_Z] = "gyro_z",
+	[SENSOR_CHAN_GYRO_XYZ] = "gyro_xyz",
+	[SENSOR_CHAN_MAGN_X] = "magn_x",
+	[SENSOR_CHAN_MAGN_Y] = "magn_y",
+	[SENSOR_CHAN_MAGN_Z] = "magn_z",
+	[SENSOR_CHAN_MAGN_XYZ] = "magn_xyz",
+	[SENSOR_CHAN_DIE_TEMP] = "die_temp",
+	[SENSOR_CHAN_AMBIENT_TEMP] = "ambient_temp",
+	[SENSOR_CHAN_PRESS] = "press",
+	[SENSOR_CHAN_PROX] = "prox",
+	[SENSOR_CHAN_HUMIDITY] = "humidity",
+	[SENSOR_CHAN_LIGHT] = "light",
+	[SENSOR_CHAN_IR] = "ir",
+	[SENSOR_CHAN_RED] = "red",
+	[SENSOR_CHAN_GREEN] = "green",
+	[SENSOR_CHAN_BLUE] = "blue",
+	[SENSOR_CHAN_ALTITUDE] = "altitude",
+	[SENSOR_CHAN_PM_1_0] = "pm_1_0",
+	[SENSOR_CHAN_PM_2_5] = "pm_2_5",
+	[SENSOR_CHAN_PM_10] = "pm_10",
+	[SENSOR_CHAN_DISTANCE] = "distance",
+	[SENSOR_CHAN_CO2] = "co2",
+	[SENSOR_CHAN_O2] = "o2",
+	[SENSOR_CHAN_VOC] = "voc",
+	[SENSOR_CHAN_GAS_RES] = "gas_resistance",
+	[SENSOR_CHAN_VOLTAGE] = "voltage",
+	[SENSOR_CHAN_CURRENT] = "current",
+	[SENSOR_CHAN_POWER] = "power",
+	[SENSOR_CHAN_RESISTANCE] = "resistance",
+	[SENSOR_CHAN_ROTATION] = "rotation",
+	[SENSOR_CHAN_POS_DX] = "pos_dx",
+	[SENSOR_CHAN_POS_DY] = "pos_dy",
+	[SENSOR_CHAN_POS_DZ] = "pos_dz",
+	[SENSOR_CHAN_RPM] = "rpm",
+	[SENSOR_CHAN_GAUGE_VOLTAGE] = "gauge_voltage",
+	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
+	[SENSOR_CHAN_GAUGE_STDBY_CURRENT] = "gauge_stdby_current",
+	[SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT] = "gauge_max_load_current",
+	[SENSOR_CHAN_GAUGE_TEMP] = "gauge_temp",
+	[SENSOR_CHAN_GAUGE_STATE_OF_CHARGE] = "gauge_state_of_charge",
+	[SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY] = "gauge_full_cap",
+	[SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY] = "gauge_remaining_cap",
+	[SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY] = "gauge_nominal_cap",
+	[SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY] = "gauge_full_avail_cap",
+	[SENSOR_CHAN_GAUGE_AVG_POWER] = "gauge_avg_power",
+	[SENSOR_CHAN_GAUGE_STATE_OF_HEALTH] = "gauge_state_of_health",
+	[SENSOR_CHAN_GAUGE_TIME_TO_EMPTY] = "gauge_time_to_empty",
+	[SENSOR_CHAN_GAUGE_TIME_TO_FULL] = "gauge_time_to_full",
+	[SENSOR_CHAN_GAUGE_CYCLE_COUNT] = "gauge_cycle_count",
+	[SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE] = "gauge_design_voltage",
+	[SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE] = "gauge_desired_voltage",
+	[SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT] = "gauge_desired_charging_current",
+	[SENSOR_CHAN_ALL] = "all",
+};
 
 static int thb_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     struct thb_data *drv_data = dev->data;
     struct adc_sequence *as = &drv_data->as;
 
     if (chan != SENSOR_CHAN_POS_DX && chan != SENSOR_CHAN_POS_DY && chan != SENSOR_CHAN_ALL) {
-        LOG_ERR("Selected channel is not supported: %d.", chan);
+        LOG_ERR("Selected channel is not supported: %d.", sensor_channel_name[chan]);
         return -ENOTSUP;
     }
 
     int rc = 0;
 
     rc = adc_read(drv_data->adc, as);
-    LOG_DBG("chan %d: read { x: %d, y: %d }", chan, drv_data->xy_raw[X_AXIS_TO_ADC_CHAN_ID],
-            drv_data->xy_raw[Y_AXIS_TO_ADC_CHAN_ID]);
+    LOG_DBG("chan %d: read { x: %d, y: %d }", sensor_channel_name[chan], drv_data->xy_raw[0],
+            drv_data->xy_raw[1]);
     // First read is setup as calibration
     as->calibrate = false;
 
@@ -84,8 +143,8 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
     const struct thb_config *drv_cfg = dev->config;
     struct adc_sequence *as = &drv_data->as;
 
-    int32_t x_mv = drv_data->xy_raw[X_AXIS_TO_ADC_CHAN_ID];
-    int32_t y_mv = drv_data->xy_raw[Y_AXIS_TO_ADC_CHAN_ID];
+    int32_t x_mv = drv_data->xy_raw[0];
+    int32_t y_mv = drv_data->xy_raw[1];
 
     adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_3, as->resolution, &x_mv);
     adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_3, as->resolution, &y_mv);
@@ -112,7 +171,7 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
         LOG_DBG("Joystick y chan = %f", out);
         break;
     default:
-        LOG_DBG("unknown chan %i", chan);
+        LOG_DBG("unknown chan %i", sensor_channel_name[chan]);
         return -ENOTSUP;
     }
 
@@ -126,7 +185,7 @@ static int thb_trigger_set(const struct device *dev, const struct sensor_trigger
     enum sensor_channel chan = trig->chan;
     enum sensor_trigger_type type = trig->type;
 
-    LOG_DBG("Setting trigger %d on chan %d", type, chan);
+    LOG_DBG("Setting trigger %d on chan %d", type, sensor_channel_name[chan]);
     if (chan != SENSOR_CHAN_ALL || type != SENSOR_TRIG_DATA_READY) {
         return -ENOTSUP;
     }
@@ -142,7 +201,7 @@ static int thb_attr_set(const struct device *dev, enum sensor_channel chan,
     struct thb_data *drv_data = dev->data;
     uint32_t usec = 0;
 
-    LOG_DBG("Setting attr %d on chan %d", attr, chan);
+    LOG_DBG("Setting attr %d on chan %d", attr, sensor_channel_name[chan]);
     if (chan != SENSOR_CHAN_ALL || attr != SENSOR_ATTR_SAMPLING_FREQUENCY) {
         return -ENOTSUP;
     }
@@ -169,7 +228,7 @@ static int thb_attr_get(const struct device *dev, enum sensor_channel chan,
                         enum sensor_attribute attr, struct sensor_value *val) {
     struct thb_data *drv_data = dev->data;
 
-    LOG_DBG("Getting attr %d on chan %d", attr, chan);
+    LOG_DBG("Getting attr %d on chan %d", attr, sensor_channel_name[chan]);
     if (chan != SENSOR_CHAN_ALL || attr != SENSOR_ATTR_SAMPLING_FREQUENCY) {
         return -ENOTSUP;
     }
@@ -213,7 +272,7 @@ static int thb_init(const struct device *dev) {
         .gain = ADC_GAIN_1_3,
         .reference = ADC_REF_INTERNAL,
         .acquisition_time = ADC_ACQ_TIME_DEFAULT,
-        .channel_id = X_AXIS_TO_ADC_CHAN_ID,
+        .channel_id = drv_cfg->channel_x,
         .input_positive = ADC_INPUT_POS_OFFSET + drv_cfg->channel_x,
     };
 
@@ -224,7 +283,7 @@ static int thb_init(const struct device *dev) {
         return rc;
     }
 
-    channel_cfg.channel_id = Y_AXIS_TO_ADC_CHAN_ID;
+    channel_cfg.channel_id = drv_cfg->channel_y;
     channel_cfg.input_positive = ADC_INPUT_POS_OFFSET + drv_cfg->channel_y;
 
     rc = adc_channel_setup(drv_data->adc, &channel_cfg);
@@ -234,7 +293,7 @@ static int thb_init(const struct device *dev) {
     }
 
     drv_data->as = (struct adc_sequence){
-        .channels = BIT(X_AXIS_TO_ADC_CHAN_ID) | BIT(Y_AXIS_TO_ADC_CHAN_ID),
+        .channels = BIT(drv_cfg->channel_y) | BIT(drv_cfg->channel_y),
         .buffer = drv_data->xy_raw,
         .buffer_size = sizeof(drv_data->xy_raw),
         .oversampling = 0,
