@@ -35,6 +35,7 @@ struct thb_config {
 
     uint32_t min_mv;
     uint32_t max_mv;
+    uint32_t freq;
 };
 
 struct thb_data {
@@ -45,7 +46,7 @@ struct thb_data {
     const struct device *dev;
     sensor_trigger_handler_t trigger_handler;
     struct sensor_trigger trigger;
-    int32_t trigger_fs;
+    int32_t trigger_freq;
     struct k_timer timer;
     struct k_work work;
 #endif
@@ -147,16 +148,14 @@ static int thb_attr_set(const struct device *dev, enum sensor_channel chan,
         return -EINVAL;
     }
 
-    drv_data->trigger_fs = val->val1;
-    if (drv_data->trigger_fs != 0) {
-        usec = 1000000UL / drv_data->trigger_fs;
+    drv_data->trigger_freq = val->val1;
+    if (drv_data->trigger_freq != 0) {
+        usec = 1000000UL / drv_data->trigger_freq;
         LOG_DBG("Setting frequency to %dusec", usec);
         k_timer_start(&drv_data->timer, K_USEC(usec), K_USEC(usec));
     } else {
-        LOG_DBG("clearing timer");
-        // explicitly setting duration and period to K_NO_WAIT prevents the
-        // timer from going off again
-        k_timer_start(&drv_data->timer, K_NO_WAIT, K_NO_WAIT);
+        LOG_DBG("stopping timer");
+        k_timer_stop(&drv_data->timer);
     }
 
     return 0;
@@ -171,7 +170,7 @@ static int thb_attr_get(const struct device *dev, enum sensor_channel chan,
         return -ENOTSUP;
     }
 
-    val->val1 = drv_data->trigger_fs;
+    val->val1 = drv_data->trigger_freq;
     val->val2 = 0;
 
     return 0;
@@ -242,8 +241,6 @@ static int thb_init(const struct device *dev) {
     };
 
 #ifdef CONFIG_JOYSTICK_THB_TRIGGER
-    k_timer_init(&drv_data->timer, thb_timer_cb, NULL);
-    k_work_init(&drv_data->work, thb_work_fun);
 #ifdef CONFIG_JOYSTICK_THB_TRIGGER_DEDICATED_QUEUE
     if (!is_thb_work_q_ready) {
         k_work_queue_start(&thb_work_q, thb_trigger_stack_area,
@@ -252,6 +249,10 @@ static int thb_init(const struct device *dev) {
         is_thb_work_q_ready = true;
     }
 #endif
+    k_work_init(&drv_data->work, thb_work_fun);
+    uint32_t usec = 1000000UL / drv_cfg->freq;
+    k_timer_init(&drv_data->timer, thb_timer_cb, NULL);
+    k_timer_start(&drv_data->timer, K_USEC(usec), K_USEC(usec));
 #endif
 
     LOG_DBG("Init done");
@@ -276,6 +277,7 @@ static const struct sensor_driver_api thb_driver_api = {
         .channel_y = DT_INST_IO_CHANNELS_INPUT_BY_NAME(n, y_axis),                                 \
         .max_mv = DT_INST_PROP(n, max_mv),                                                         \
         .min_mv = COND_CODE_0(DT_INST_NODE_HAS_PROP(n, min_mv), (0), (DT_INST_PROP(n, min_mv))),   \
+        .freq = COND_CODE_0(DT_INST_NODE_HAS_PROP(n, freq), (100000), (DT_INST_PROP(n, freq))),    \
     };                                                                                             \
     DEVICE_DT_INST_DEFINE(n, thb_init, NULL, &thb_data_##n, &thb_config_##n, POST_KERNEL,          \
                           CONFIG_SENSOR_INIT_PRIORITY, &thb_driver_api);

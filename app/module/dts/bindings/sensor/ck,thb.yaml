@@ -16,6 +16,14 @@ properties:
     description: |
       Channels names, use "X-AXIS" and "Y-AXIS" accordingly
 
+  freq:
+    type: int
+    required: false
+    description: |
+      The sampling frequency of the sensor. Do not set higher than 100KHz.
+
+      If absent, a default 100KHz value will be used
+
   min-mv:
     type: int
     required: false
