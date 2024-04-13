@@ -212,6 +212,7 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
 
     int32_t x_mv = drv_data->xy_raw[0];
     int32_t y_mv = drv_data->xy_raw[1];
+    LOG_DBG("chan %s: Getting data { x: %d, y: %d }", sensor_channel_name(chan), x_mv, y_mv);
 
     adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_6, as->resolution, &x_mv);
     adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_6, as->resolution, &y_mv);
