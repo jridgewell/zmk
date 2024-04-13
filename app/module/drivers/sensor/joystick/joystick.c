@@ -83,9 +83,9 @@ static int joy_sample_fetch(const struct device *dev, enum sensor_channel chan) 
     drv_data->delta = val - drv_data->value;
     drv_data->value = val;
 
-    if (abs(val) >= drv_cfg->min_on) {
+    /* if (abs(val) >= drv_cfg->min_on) { */
         LOG_DBG("Joystick chan: %d = %d", drv_cfg->io_channel, val);
-    }
+    /* } */
 
     return 0;
 }
