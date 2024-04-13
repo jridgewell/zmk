@@ -42,8 +42,8 @@ struct thb_data {
 #ifdef CONFIG_JOYSTICK_THB_TRIGGER
     const struct device *dev;
     sensor_trigger_handler_t trigger_handler;
-    struct sensor_trigger trigger;
-    int32_t trigger_freq;
+    const struct sensor_trigger *trigger;
+    int32_t timer_freq;
     struct k_timer timer;
     struct k_work work;
 #endif
@@ -257,7 +257,7 @@ static int thb_trigger_set(const struct device *dev, const struct sensor_trigger
         return -ENOTSUP;
     }
 
-    drv_data->trigger = *trig;
+    drv_data->trigger = trig;
     drv_data->trigger_handler = handler;
 
     return 0;
@@ -278,9 +278,9 @@ static int thb_attr_set(const struct device *dev, enum sensor_channel chan,
         return -EINVAL;
     }
 
-    drv_data->trigger_freq = val->val1;
-    if (drv_data->trigger_freq != 0) {
-        usec = 1000000UL / drv_data->trigger_freq;
+    drv_data->timer_freq = val->val1;
+    if (drv_data->timer_freq != 0) {
+        usec = 1000000UL / drv_data->timer_freq;
         LOG_DBG("Setting frequency to %dusec", usec);
         k_timer_start(&drv_data->timer, K_USEC(usec), K_USEC(usec));
     } else {
@@ -300,7 +300,7 @@ static int thb_attr_get(const struct device *dev, enum sensor_channel chan,
         return -ENOTSUP;
     }
 
-    val->val1 = drv_data->trigger_freq;
+    val->val1 = drv_data->timer_freq;
     val->val2 = 0;
 
     return 0;
@@ -321,7 +321,7 @@ static void thb_work_fun(struct k_work *item) {
     thb_sample_fetch(drv_data->dev, SENSOR_CHAN_ALL);
 
     if (drv_data->trigger_handler) {
-        drv_data->trigger_handler(drv_data->dev, &drv_data->trigger);
+        drv_data->trigger_handler(drv_data->dev, drv_data->trigger);
     }
 }
 #endif // CONFIG_JOYSTICK_THB_TRIGGER
@@ -380,7 +380,6 @@ static int thb_init(const struct device *dev) {
     k_work_init(&drv_data->work, thb_work_fun);
     uint32_t usec = 1000 / drv_cfg->freq;
     k_timer_init(&drv_data->timer, thb_timer_cb, NULL);
-    k_timer_user_data_set(&drv_data->timer, dev);
     k_timer_start(&drv_data->timer, K_MSEC(usec), K_MSEC(usec));
 #endif
 
