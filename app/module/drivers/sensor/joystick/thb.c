@@ -213,8 +213,8 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
     int32_t x_mv = drv_data->xy_raw[0];
     int32_t y_mv = drv_data->xy_raw[1];
 
-    adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_3, as->resolution, &x_mv);
-    adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_3, as->resolution, &y_mv);
+    adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_6, as->resolution, &x_mv);
+    adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_6, as->resolution, &y_mv);
 
     double out = 0.0;
     switch (chan) {
@@ -336,7 +336,7 @@ static int thb_init(const struct device *dev) {
     }
 
     struct adc_channel_cfg channel_cfg = {
-        .gain = ADC_GAIN_1_3,
+        .gain = ADC_GAIN_1_6,
         .reference = ADC_REF_INTERNAL,
         .acquisition_time = ADC_ACQ_TIME_DEFAULT,
         .channel_id = drv_cfg->channel_x,
