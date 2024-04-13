@@ -110,6 +110,7 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
         LOG_DBG("Joystick y chan = %f", out);
         break;
     default:
+        LOG_DBG("unknown chan %i", chan);
         return -ENOTSUP;
     }
 
@@ -123,6 +124,7 @@ static int thb_trigger_set(const struct device *dev, const struct sensor_trigger
     enum sensor_channel chan = trig->chan;
     enum sensor_trigger_type type = trig->type;
 
+    LOG_DBG("Setting trigger %d on chan %d", type, chan);
     if (chan != SENSOR_CHAN_ALL || type != SENSOR_TRIG_DATA_READY) {
         return -ENOTSUP;
     }
@@ -177,7 +179,6 @@ static int thb_attr_get(const struct device *dev, enum sensor_channel chan,
 }
 
 static void thb_timer_cb(struct k_timer *item) {
-    LOG_DBG("Timer run");
     struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, timer);
 #if defined(CONFIG_JOYSTICK_THB_TRIGGER_DEDICATED_QUEUE)
     k_work_submit_to_queue(&thb_work_q, &drv_data->work);
@@ -187,7 +188,6 @@ static void thb_timer_cb(struct k_timer *item) {
 }
 
 static void thb_work_fun(struct k_work *item) {
-    LOG_DBG("Working");
     struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, work);
 
     thb_sample_fetch(drv_data->dev, SENSOR_CHAN_ALL);
