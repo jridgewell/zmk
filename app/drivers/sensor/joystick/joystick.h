@@ -27,7 +27,7 @@ struct joy_config {
 struct joy_data {
     const struct device *adc;
     int setup;
-    
+
     struct adc_channel_cfg acc;
     struct adc_sequence as;
     uint16_t adc_raw;
@@ -45,6 +45,4 @@ struct joy_data {
 
     struct k_timer timer;
     struct k_work work;
-
 };
-
