@@ -360,7 +360,7 @@ static int thb_init(const struct device *dev) {
     }
 
     drv_data->as = (struct adc_sequence){
-        .channels = BIT(drv_cfg->channel_y) | BIT(drv_cfg->channel_y),
+        .channels = BIT(drv_cfg->channel_x) | BIT(drv_cfg->channel_y),
         .buffer = drv_data->xy_raw,
         .buffer_size = sizeof(drv_data->xy_raw),
         .oversampling = 0,
