@@ -29,15 +29,15 @@ struct thb_config {
     // for pretty much all use cases
     uint8_t channel;
 
-    uint32_t min_mv;
-    uint32_t max_mv;
-    uint32_t freq;
+    uint32_t dead_zone;
+    uint32_t frequency;
 };
 
 struct thb_data {
     const struct device *adc;
     struct adc_sequence as;
     int16_t raw;
+    int32_t zero_point;
 #ifdef CONFIG_JOYSTICK_THB_TRIGGER
     const struct device *dev;
     sensor_trigger_handler_t trigger_handler;
@@ -183,24 +183,26 @@ static char *sensor_channel_name(enum sensor_channel chan) {
     }
 };
 
-static int thb_sample_fetch(const struct device *dev, enum sensor_channel chan) {
+static int read(const struct device *dev) {
     struct thb_data *drv_data = dev->data;
     const struct thb_config *drv_cfg = dev->config;
     struct adc_sequence *as = &drv_data->as;
 
+    int rc = adc_read(drv_data->adc, as);
+    LOG_DBG("channel %d: read %d", drv_cfg->channel, drv_data->raw);
+    // First read is setup as calibration
+    as->calibrate = false;
+
+    return rc;
+}
+
+static int thb_sample_fetch(const struct device *dev, enum sensor_channel chan) {
     if (chan != SENSOR_CHAN_POS_DX && chan != SENSOR_CHAN_POS_DY && chan != SENSOR_CHAN_ALL) {
         LOG_ERR("Selected channel is not supported: %s.", sensor_channel_name(chan));
         return -ENOTSUP;
     }
 
-    int rc = 0;
-
-    rc = adc_read(drv_data->adc, as);
-    LOG_DBG("chan %d: read %d", drv_cfg->channel, drv_data->raw);
-    // First read is setup as calibration
-    as->calibrate = false;
-
-    return rc;
+    return read(dev);
 }
 
 static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -210,22 +212,17 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
     struct adc_sequence *as = &drv_data->as;
 
     int32_t mv = drv_data->raw;
-    LOG_DBG("channel %d: Getting data %d", drv_cfg->channel, mv);
-
     adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_6, as->resolution, &mv);
 
-    double out = 0.0;
-    switch (chan) {
-    case SENSOR_CHAN_ALL:
-    case SENSOR_CHAN_ROTATION:
-        out = 2.0 * mv / (drv_cfg->max_mv - drv_cfg->min_mv) - 1.0;
-        sensor_value_from_double(val, out);
-        LOG_DBG("Joystick chan %d = %f", drv_cfg->channel, out);
-        break;
-    default:
-        LOG_DBG("unknown chan %s", sensor_channel_name(chan));
-        return -ENOTSUP;
+    int32_t out = mv - drv_data->zero_point;
+    LOG_DBG("channel %d: Getting data { raw: %d, zero: %d, out: %d }", drv_cfg->channel, mv,
+            drv_data->zero_point, out);
+
+    int32_t res = drv_cfg->dead_zone;
+    if (-res < out && out < res) {
+        out = 0;
     }
+    sensor_value_from_double(val, out);
 
     return 0;
 }
@@ -265,7 +262,7 @@ static int thb_trigger_set(const struct device *dev, const struct sensor_trigger
     drv_data->trigger_handler = handler;
 
     const struct thb_config *drv_cfg = dev->config;
-    uint32_t usec = 1000 / drv_cfg->freq;
+    uint32_t usec = 1000 / drv_cfg->frequency;
     k_work_init(&drv_data->work, thb_work_fun);
     k_timer_init(&drv_data->timer, thb_timer_cb, NULL);
     k_timer_start(&drv_data->timer, K_MSEC(usec), K_MSEC(usec));
@@ -359,6 +356,15 @@ static int thb_init(const struct device *dev) {
     }
 #endif
 
+    rc = read(dev);
+    if (rc < 0) {
+        LOG_DBG("failed reading initial zero point");
+        return rc;
+    }
+    drv_data->zero_point = drv_data->raw;
+    adc_raw_to_millivolts(adc_ref_internal(drv_data->adc), ADC_GAIN_1_6, drv_data->as.resolution,
+                          &drv_data->zero_point);
+
     LOG_DBG("Init done");
     return rc;
 }
@@ -378,9 +384,10 @@ static const struct sensor_driver_api thb_driver_api = {
         .adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(DT_DRV_INST(n)))};                                \
     static const struct thb_config thb_config_##n = {                                              \
         .channel = DT_INST_IO_CHANNELS_INPUT(n),                                                   \
-        .max_mv = DT_INST_PROP(n, max_mv),                                                         \
-        .min_mv = COND_CODE_0(DT_INST_NODE_HAS_PROP(n, min_mv), (0), (DT_INST_PROP(n, min_mv))),   \
-        .freq = COND_CODE_0(DT_INST_NODE_HAS_PROP(n, freq), (100), (DT_INST_PROP(n, freq))),       \
+        .dead_zone =                                                                               \
+            COND_CODE_0(DT_INST_NODE_HAS_PROP(n, dead_zone), (0), (DT_INST_PROP(n, dead_zone))),   \
+        .frequency =                                                                               \
+            COND_CODE_0(DT_INST_NODE_HAS_PROP(n, frequency), (100), (DT_INST_PROP(n, frequency))), \
     };                                                                                             \
     DEVICE_DT_INST_DEFINE(n, thb_init, NULL, &thb_data_##n, &thb_config_##n, POST_KERNEL,          \
                           CONFIG_SENSOR_INIT_PRIORITY, &thb_driver_api);

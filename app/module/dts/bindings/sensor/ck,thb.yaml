@@ -11,12 +11,7 @@ properties:
     description: |
       Channels available with this divider configuration.
 
-  io-channel-names:
-    required: true
-    description: |
-      Channels names, use "X-AXIS" and "Y-AXIS" accordingly
-
-  freq:
+  frequency:
     type: int
     required: false
     description: |
@@ -24,18 +19,10 @@ properties:
 
       If absent, a default 100Hz value will be used
 
-  min-mv:
+  dead-zone:
     type: int
     required: false
     description: |
-      Minimum voltage output on the potentiometer
+      Minimum delta that must be read for the sensor to trigger.
 
       If absent, a default 0 value will be used
-
-  max-mv:
-    type: int
-    required: true
-    description: |
-      Maximum voltage output on the potentiometer
-
-      max-mv - min-mv will be the full range of potentiometer output
