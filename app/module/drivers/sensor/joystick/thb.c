@@ -222,7 +222,13 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
     if (-res < out && out < res) {
         out = 0;
     }
-    sensor_value_from_double(val, out);
+    switch (chan) {
+    case SENSOR_CHAN_ROTATION:
+        val->val1 = out < 0 ? -1 : out > 0 ? 1 : 0;
+        break;
+    default:
+        val->val1 = out;
+    }
 
     return 0;
 }
