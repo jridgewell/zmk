@@ -250,9 +250,10 @@ static int thb_init(const struct device *dev) {
     }
 #endif
     k_work_init(&drv_data->work, thb_work_fun);
-    uint32_t usec = 1000000UL / drv_cfg->freq;
+    uint32_t usec = 1000 / drv_cfg->freq;
     k_timer_init(&drv_data->timer, thb_timer_cb, NULL);
-    k_timer_start(&drv_data->timer, K_USEC(usec), K_USEC(usec));
+    k_timer_user_data_set(&drv_data->timer, dev);
+    k_timer_start(&drv_data->timer, K_MSEC(usec), K_MSEC(usec));
 #endif
 
     LOG_DBG("Init done");
@@ -277,7 +278,7 @@ static const struct sensor_driver_api thb_driver_api = {
         .channel_y = DT_INST_IO_CHANNELS_INPUT_BY_NAME(n, y_axis),                                 \
         .max_mv = DT_INST_PROP(n, max_mv),                                                         \
         .min_mv = COND_CODE_0(DT_INST_NODE_HAS_PROP(n, min_mv), (0), (DT_INST_PROP(n, min_mv))),   \
-        .freq = COND_CODE_0(DT_INST_NODE_HAS_PROP(n, freq), (100000), (DT_INST_PROP(n, freq))),    \
+        .freq = COND_CODE_0(DT_INST_NODE_HAS_PROP(n, freq), (100), (DT_INST_PROP(n, freq))),       \
     };                                                                                             \
     DEVICE_DT_INST_DEFINE(n, thb_init, NULL, &thb_data_##n, &thb_config_##n, POST_KERNEL,          \
                           CONFIG_SENSOR_INIT_PRIORITY, &thb_driver_api);
