@@ -16,7 +16,7 @@ properties:
     description: |
       Channels names, use "X-AXIS" and "Y-AXIS" accordingly
 
-  frequency:
+  freq:
     type: int
     required: false
     description: |
@@ -24,10 +24,18 @@ properties:
 
       If absent, a default 100Hz value will be used
 
-  resolution:
+  min-mv:
     type: int
     required: false
     description: |
-      Minimum delta that must be read for the sensor to trigger.
+      Minimum voltage output on the potentiometer
 
       If absent, a default 0 value will be used
+
+  max-mv:
+    type: int
+    required: true
+    description: |
+      Maximum voltage output on the potentiometer
+
+      max-mv - min-mv will be the full range of potentiometer output
