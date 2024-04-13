@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT joystick
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
 #include <stdlib.h>
-#include <pm/device.h>
-#include "../../../include/drivers/ext_power.h"
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include  "../../../../include/drivers/ext_power.h"
 
 #include "joystick.h"
 
