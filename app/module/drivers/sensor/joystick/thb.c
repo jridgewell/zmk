@@ -253,7 +253,7 @@ static int thb_trigger_set(const struct device *dev, const struct sensor_trigger
     enum sensor_trigger_type type = trig->type;
 
     LOG_DBG("Setting trigger %d on chan %s", type, sensor_channel_name(chan));
-    if (chan != SENSOR_CHAN_ALL || type != SENSOR_TRIG_DATA_READY) {
+    if (chan != SENSOR_CHAN_ROTATION || type != SENSOR_TRIG_DATA_READY) {
         return -ENOTSUP;
     }
 
