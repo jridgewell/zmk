@@ -77,15 +77,17 @@ static int joy_sample_fetch(const struct device *dev, enum sensor_channel chan) 
     val = joy_get_state(dev);
 
     val -= drv_data->zero_value;
+    LOG_DBG("Joystick chan %d: { val: %d, zero: %d, delta: %d, last_rotate: %d }",
+            drv_cfg->io_channel, val, drv_data->zero_value, drv_data->delta, drv_data->last_rotate);
     if (drv_cfg->reverse) {
         val = -val;
     }
     drv_data->delta = val - drv_data->value;
     drv_data->value = val;
 
-    /* if (abs(val) >= drv_cfg->min_on) { */
+    if (abs(val) >= drv_cfg->min_on) {
         LOG_DBG("Joystick chan: %d = %d", drv_cfg->io_channel, val);
-    /* } */
+    }
 
     return 0;
 }
@@ -98,6 +100,8 @@ static int joy_channel_get(const struct device *dev, enum sensor_channel chan,
     int value = drv_data->value;
 
     if (chan == SENSOR_CHAN_ROTATION) {
+        LOG_DBG("Joystick rotate %d: { value: %d, last_rotate: %d }", drv_cfg->io_channel, value,
+                drv_data->last_rotate);
         val->val1 = 0;
         val->val2 = 0;
         if (value >= drv_data->last_rotate + drv_cfg->resolution) {
@@ -111,6 +115,7 @@ static int joy_channel_get(const struct device *dev, enum sensor_channel chan,
     } else if (chan == SENSOR_CHAN_PRESS) {
         val->val1 = 0;     // calibration adjusted
         val->val2 = value; // raw value
+        LOG_DBG("Joystick press %d: { value: %d }", drv_cfg->io_channel, value);
         if (value >= drv_cfg->min_on) {
             val->val1 = 1 + value - drv_cfg->min_on;
         } else if (value <= -drv_cfg->min_on) {
