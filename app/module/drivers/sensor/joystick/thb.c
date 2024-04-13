@@ -230,6 +230,7 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
         sensor_value_from_double(val, out);
         break;
     case SENSOR_CHAN_ALL:
+    case SENSOR_CHAN_ROTATION:
         out = 2.0 * x_mv / (drv_cfg->max_mv - drv_cfg->min_mv) - 1.0;
         sensor_value_from_double(val, out);
         LOG_DBG("Joystick x chan = %f", out);
