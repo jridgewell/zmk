@@ -223,13 +223,7 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
     if (-res < out && out < res) {
         out = 0;
     }
-    switch (chan) {
-    case SENSOR_CHAN_ROTATION:
-        val->val1 = out < 0 ? -1 : out > 0 ? 1 : 0;
-        break;
-    default:
-        val->val1 = out;
-    }
+    val->val1 = out;
     val->val2 = 0;
 
     LOG_DBG("channel %d got %d", drv_cfg->channel, val->val1);
