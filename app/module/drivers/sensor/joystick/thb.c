@@ -38,6 +38,7 @@ struct thb_data {
     struct adc_sequence as;
     int16_t raw;
     int32_t zero_point;
+
 #ifdef CONFIG_JOYSTICK_THB_TRIGGER
     const struct device *dev;
     sensor_trigger_handler_t trigger_handler;
@@ -183,7 +184,7 @@ static char *sensor_channel_name(enum sensor_channel chan) {
     }
 };
 
-static int read(const struct device *dev) {
+static int thb_read(const struct device *dev) {
     struct thb_data *drv_data = dev->data;
     const struct thb_config *drv_cfg = dev->config;
     struct adc_sequence *as = &drv_data->as;
@@ -202,7 +203,7 @@ static int thb_sample_fetch(const struct device *dev, enum sensor_channel chan) 
         return -ENOTSUP;
     }
 
-    return read(dev);
+    return thb_read(dev);
 }
 
 static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -229,13 +230,17 @@ static int thb_channel_get(const struct device *dev, enum sensor_channel chan,
     default:
         val->val1 = out;
     }
+    val->val2 = 0;
 
+    LOG_DBG("channel %d got %d", drv_cfg->channel, val->val1);
     return 0;
 }
 
 #ifdef CONFIG_JOYSTICK_THB_TRIGGER
 static void thb_timer_cb(struct k_timer *item) {
     struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, timer);
+    const struct thb_config *drv_cfg = drv_data->dev->config;
+    LOG_DBG("timer fired for channel %d", drv_cfg->channel);
 #if defined(CONFIG_JOYSTICK_THB_TRIGGER_DEDICATED_QUEUE)
     k_work_submit_to_queue(&thb_work_q, &drv_data->work);
 #elif defined(CONFIG_JOYSTICK_THB_TRIGGER_SYSTEM_QUEUE)
@@ -245,12 +250,10 @@ static void thb_timer_cb(struct k_timer *item) {
 
 static void thb_work_fun(struct k_work *item) {
     struct thb_data *drv_data = CONTAINER_OF(item, struct thb_data, work);
+    const struct thb_config *drv_cfg = drv_data->dev->config;
+    LOG_DBG("working for channel %d", drv_cfg->channel);
 
-    thb_sample_fetch(drv_data->dev, SENSOR_CHAN_ALL);
-
-    if (drv_data->trigger_handler) {
-        drv_data->trigger_handler(drv_data->dev, drv_data->trigger);
-    }
+    drv_data->trigger_handler(drv_data->dev, drv_data->trigger);
 }
 
 static int thb_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
@@ -362,7 +365,7 @@ static int thb_init(const struct device *dev) {
     }
 #endif
 
-    rc = read(dev);
+    rc = thb_read(dev);
     if (rc < 0) {
         LOG_DBG("failed reading initial zero point");
         return rc;
